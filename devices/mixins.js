@@ -258,6 +258,117 @@ const roller = (device, id) => {
   })
 }
 
+const cover = (device, id) => {
+  device._coverState = 'stop'
+  device._coverPositionInterval = null
+
+  device._defineProperty('coverPosition', id, 0, Number)
+
+  const setState = newState => {
+    if (newState === device._coverState) {
+      return
+    }
+    if (newState !== 'stop' && newState !== 'open' && newState !== 'close') {
+      throw new Error(`Invalid cover state "${newState}"`)
+    }
+
+    let relay0 = false
+    let relay1 = false
+
+    if (newState === 'open') {
+      relay0 = true
+    } else if (newState === 'close') {
+      relay1 = true
+    }
+
+    if (relay0 !== device.relay0) {
+      // change the private property here to avoid triggering a
+      // status update broadcast
+      device._relay0 = relay0
+      device.emit('change:relay0', relay0, !relay0, device)
+    }
+    if (relay1 !== device.relay1) {
+      // change the private property here to avoid triggering a
+      // status update broadcast
+      device._relay1 = relay1
+      device.emit('change:relay1', relay1, !relay1, device)
+    }
+
+    const oldState = device._coverState
+    device._coverState = newState
+    device.emit('change', 'coverState', newState, oldState, device)
+    device.emit('change:coverState', newState, oldState, device)
+  }
+
+  const setPosition = newPosition => {
+    const cp = device.coverPosition
+    const np = Math.max(Math.min(Math.round(newPosition), 100), 0)
+    let offset = 0
+
+    if (np === cp) {
+      return
+    } else if (np > cp) {
+      setState('open')
+      offset = 10
+    } else if (np < cp) {
+      setState('close')
+      offset = -10
+    }
+
+    if (device._coverPositionInterval !== null) {
+      clearInterval(device._coverPositionInterval)
+    }
+
+    device._coverPositionInterval = setInterval(() => {
+      if (offset > 0) {
+        device.coverPosition = Math.min(device.coverPosition + offset, np)
+      } else {
+        device.coverPosition = Math.max(device.coverPosition + offset, np)
+      }
+      console.log('coverPosition:', device.coverPosition)
+
+      if ((offset > 0 && device.coverPosition >= np) ||
+          (offset < 0 && device.coverPosition <= np)) {
+        clearInterval(device._coverPositionInterval)
+        device._coverPositionInterval = null
+        setState('stop')
+      }
+    }, 1000)
+  }
+  device.setCoverPosition = setPosition
+
+  const getHttpSettings = () => {
+    return Object.assign(
+      {
+        swap: false,
+      },
+      getHttpStatus(),
+    )
+  }
+  device._getCoverHttpSettings = getHttpSettings
+
+  const getHttpStatus = () => {
+    return {
+      state: device._coverState,
+      current_pos: device.coverPosition,
+    }
+  }
+  device._getCoverHttpStatus = getHttpStatus
+
+  device._httpRoutes.set('/cover/0', (req, res, next) => {
+    if (req.query && req.query.go === 'to_pos') {
+      if (isNaN(parseInt(req.query.cover_pos))) {
+        throw new Error(`Invalid position "${req.query.cover_pos}"`)
+      }
+
+      setPosition(Number(req.query.cover_pos))
+    }
+
+    res.send(getHttpStatus())
+    next()
+  })
+}
+
 const whiteLight = (device, index, brightnessId, switchId, uri = '/white/') => {
   device._defineProperty(`brightness${index}`, brightnessId, 0, Number)
   device._defineProperty(`switch${index}`, switchId, false, Boolean)
@@ -301,5 +412,6 @@ module.exports = {
   relay,
   rgbw,
   roller,
+  cover,
   whiteLight,
 }

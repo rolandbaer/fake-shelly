@@ -16,6 +16,7 @@ const ShellyPlugS = require('./shplg-s')
 const ShellyRGBW2Color = require('./shrgbw2-color')
 const ShellyRGBW2White = require('./shrgbw2-white')
 const ShellySense = require('./shsen-1')
+const ShellyPlus2PMCover = require('./shplus-2pm-cover.js')
 
 const createDevice = (type, id) => {
   switch (type) {
@@ -59,6 +60,8 @@ const createDevice = (type, id) => {
       return new Shelly4Pro(id)
     case 'SHWT-1':
       return new ShellyFlood(id)
+    case 'SHPL-2PM-COVER':
+      return new ShellyPlus2PMCover(id)
     default:
       throw new Error(`Unknown device type "${type}"`)
   }
@@ -84,4 +87,5 @@ module.exports = {
   ShellyRGBW2Color,
   ShellyRGBW2White,
   ShellySense,
+  ShellyPlus2PMCover,
 }

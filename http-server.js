@@ -29,7 +29,7 @@ class HttpServer extends EventEmitter {
 
       this.device.setupHttpRoutes(server)
 
-      server.listen(80, error => {
+      server.listen(8080, error => {
         if (!error) {
           resolve()
         } else {
