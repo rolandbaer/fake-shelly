@@ -74,10 +74,11 @@ class Device extends EventEmitter {
 
   _handleShellyRequest(req, res, next) {
     res.send({
-      app: this.app,
-      profile: this.profile,
       mac: this.macAddress,
+      gen: 2,
+      app: this.app,
       auth: false,
+      profile: this.profile,
     })
     next()
   }

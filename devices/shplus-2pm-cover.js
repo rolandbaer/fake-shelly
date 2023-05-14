@@ -7,7 +7,7 @@ class ShellyPlus2PMCover extends Device {
 
     mixins.powerMeter(this, 0, 111)
     mixins.relay(this, 0, 112, true)
-    mixins.cover(this, 113)
+    mixins.cover(this, 0)
     mixins.powerMeter(this, 1, 121)
     mixins.relay(this, 1, 122, true)
 

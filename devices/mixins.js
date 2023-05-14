@@ -259,7 +259,7 @@ const roller = (device, id) => {
 }
 
 const cover = (device, id) => {
-  device._coverState = 'stop'
+  device._coverState = 'stopped'
   device._coverPositionInterval = null
 
   device._defineProperty('coverPosition', id, 0, Number)
@@ -268,7 +268,7 @@ const cover = (device, id) => {
     if (newState === device._coverState) {
       return
     }
-    if (newState !== 'stop' && newState !== 'open' && newState !== 'close') {
+    if (newState !== 'stopped' && newState !== 'open' && newState !== 'closed' && newState != 'opening' && newState != 'closing') {
       throw new Error(`Invalid cover state "${newState}"`)
     }
 
@@ -308,10 +308,10 @@ const cover = (device, id) => {
     if (np === cp) {
       return
     } else if (np > cp) {
-      setState('open')
+      setState('opening')
       offset = 10
     } else if (np < cp) {
-      setState('close')
+      setState('closing')
       offset = -10
     }
 
@@ -331,7 +331,13 @@ const cover = (device, id) => {
           (offset < 0 && device.coverPosition <= np)) {
         clearInterval(device._coverPositionInterval)
         device._coverPositionInterval = null
-        setState('stop')
+        if(device.coverPosition === 100) {
+          setState("open")
+        } else if (device.coverPosition === 0) {
+          setState("closed")
+        } else {
+          setState('stopped')
+        }
       }
     }, 1000)
   }
@@ -349,22 +355,27 @@ const cover = (device, id) => {
 
   const getHttpStatus = () => {
     return {
+      id: id,
       state: device._coverState,
       current_pos: device.coverPosition,
     }
   }
   device._getCoverHttpStatus = getHttpStatus
 
-  device._httpRoutes.set('/cover/0', (req, res, next) => {
-    if (req.query && req.query.go === 'to_pos') {
-      if (isNaN(parseInt(req.query.cover_pos))) {
-        throw new Error(`Invalid position "${req.query.cover_pos}"`)
-      }
-
-      setPosition(Number(req.query.cover_pos))
-    }
-
+  device._httpRoutes.set('/rpc/Cover.GetStatus', (req, res, next) => {
     res.send(getHttpStatus())
+    next()
+  })
+
+  device._httpRoutes.set('/rpc/Cover.Open', (req, res, next) => {
+    setPosition(100)
+    res.send(null)
+    next()
+  })
+
+  device._httpRoutes.set('/rpc/Cover.Close', (req, res, next) => {
+    setPosition(0)
+    res.send(null)
     next()
   })
 }
