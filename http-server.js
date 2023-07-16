@@ -11,7 +11,7 @@ class HttpServer extends EventEmitter {
     this.server = null
   }
 
-  start() {
+  start(port) {
     if (this.server !== null) {
       return Promise.resolve()
     }
@@ -29,7 +29,7 @@ class HttpServer extends EventEmitter {
 
       this.device.setupHttpRoutes(server)
 
-      server.listen(8080, error => {
+      server.listen(port, error => {
         if (!error) {
           resolve()
         } else {

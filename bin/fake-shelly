@@ -7,6 +7,7 @@ const HttpServer = require('../http-server')
 const { createDevice } = require('../devices')
 
 const opts = commandLineArgs([
+  { name: 'port', alias: 'p', type: Number, defaultValue: 80 },
   { name: 'device', type: String, defaultValue: 'SHSW-1', defaultOption: true },
   { name: 'id', type: String, defaultValue: 'ABC123' },
 ])
@@ -48,7 +49,7 @@ coapServer.start()
     console.error('Failed to start CoAP server:', error)
   })
 
-httpServer.start()
+httpServer.start(opts.port)
   .then(() => {
     console.log('HTTP server started')
   })
